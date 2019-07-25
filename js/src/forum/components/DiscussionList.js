@@ -29,6 +29,13 @@ export default class DiscussionList extends Component {
     this.moreResults = false;
 
     /**
+     * Number of discussions to offset for pagination
+     *
+     * @type {number}
+     */
+    this.offset = ((m.route.param('page') - 1) * 20) || 0;
+
+    /**
      * The discussions in the discussion list.
      *
      * @type {Discussion[]}
@@ -146,10 +153,10 @@ export default class DiscussionList extends Component {
   /**
    * Load a new page of discussion results.
    *
-   * @param {Integer} offset The index to start the page at.
+   * @param {Number} offset The index to start the page at.
    * @return {Promise}
    */
-  loadResults(offset) {
+  loadResults(offset = this.offset) {
     const preloadedDiscussions = app.preloadedApiDocument();
 
     if (preloadedDiscussions) {
@@ -171,7 +178,16 @@ export default class DiscussionList extends Component {
   loadMore() {
     this.loading = true;
 
-    this.loadResults(this.discussions.length)
+    // Construct a URL to this discussion with the updated page, then
+    // replace it into the window's history and our own history stack.
+    const url = app.route('index', {
+      ...m.route.param(),
+      page: (this.offset += 20) / 20 + 1
+    });
+
+    window.history.replaceState(null, document.title, url);
+
+    this.loadResults()
       .then(this.parseResults.bind(this));
   }
 
